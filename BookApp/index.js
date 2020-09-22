@@ -158,7 +158,7 @@ const resolvers = {
             return null
         }
         author.born = args.setBornTo
-        return author
+        return { ...author, bookCount: books.filter(book => book.author === author.name).length }
     }
   }
 }
