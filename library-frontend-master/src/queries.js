@@ -1,11 +1,48 @@
 import { gql } from '@apollo/client'
 
+export const LOGIN = gql`
+  mutation login($username: String!, $password: String!) {
+    login(username: $username, password: $password)  {
+      value
+    }
+  }
+`
+
+export const ME = gql`
+query {
+  me  {
+    username
+    favoriteGenre
+    id
+  }
+}
+`
+
+export const FAVORITE_BOOKS = gql`
+query favoriteBooks($genre: String!) {
+  allBooks(
+    genre: $genre
+  ) {
+    title
+    author {
+      name
+    }
+    published
+    genres
+    id
+  }
+}
+`
+
 export const ALL_BOOKS = gql`
 query {
   allBooks  {
     title
-    author
+    author {
+      name
+    }
     published
+    genres
     id
   }
 }
@@ -31,7 +68,9 @@ mutation createBook($title: String!, $author: String!, $published: Int!, $genres
     genres: $genres
   ) {
     title
-    author
+    author {
+      name
+    }
     published
     genres
     id
