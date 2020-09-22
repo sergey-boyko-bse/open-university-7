@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react'
-import { useApolloClient, useLazyQuery } from '@apollo/client'
+import { useApolloClient, useLazyQuery, useSubscription } from '@apollo/client'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
 import Birthyear from './components/Birthyear'
 import LoginForm from './components/LoginForm'
 import Recommend from './components/Recommend'
-import { ME } from './queries'
+import { ME, BOOK_ADDED, ALL_BOOKS, FAVORITE_BOOKS } from './queries'
 
 const Notify = ({ errorMessage }) => {
   if ( !errorMessage ) {
@@ -37,11 +37,19 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    console.log('data:', meResult.data)
     if(meResult.data && meResult.data.me) {
       setFavoriteGenre(meResult.data.me.favoriteGenre)
     }    
   }, [meResult.data])
+
+  useSubscription(BOOK_ADDED, {
+    onSubscriptionData: ({ subscriptionData }) => {
+      const bookAdded = subscriptionData.data.bookAdded
+      console.log(`${bookAdded.title} added`)
+      notify(`${bookAdded.title} added`)
+      updateCacheWith(bookAdded)
+    }
+  })
 
   const onTokenRetrieved = (token) => {
     setToken(token)
@@ -60,6 +68,30 @@ const App = () => {
     setTimeout(() => {
       setErrorMessage(null)
     }, 5000)
+  }
+
+  const updateCacheWith = (addedBook) => {
+    const includedIn = (set, object) => 
+      set.map(p => p.id).includes(object.id)  
+
+    const allInStore = client.readQuery({ query: ALL_BOOKS })
+    if (!includedIn(allInStore.allBooks, addedBook)) {
+      client.writeQuery({
+        query: ALL_BOOKS,
+        data: { allBooks : allInStore.allBooks.concat(addedBook) }
+      })
+    }
+    
+    if(addedBook.genres.indexOf(favoriteGenre) > -1) {
+      const favoriteInStore = client.readQuery({ query: FAVORITE_BOOKS, variables: { genre: favoriteGenre || '' } })
+      if (!includedIn(favoriteInStore.allBooks, addedBook)) {
+        client.writeQuery({
+          query: FAVORITE_BOOKS, 
+          variables: { genre: favoriteGenre || '' },
+          data: { allBooks : favoriteInStore.allBooks.concat(addedBook) }
+        })
+      }
+    }
   }
 
   if (!token) {
@@ -89,6 +121,7 @@ const App = () => {
         <button onClick={() => setPage('setBirthyear')}>set birthyear</button>
         <button onClick={logout}>logout</button>
       </div>
+      <Notify errorMessage={errorMessage} />
 
       <Authors
         show={page === 'authors'}

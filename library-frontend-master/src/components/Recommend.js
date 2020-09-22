@@ -1,21 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { useLazyQuery, useQuery } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import { FAVORITE_BOOKS } from '../queries'
 
 const Books = (props) => {
   const [favoriteBooks, setFavoriteBooks] = useState([])
   const result = useQuery(FAVORITE_BOOKS, { variables: { genre: props.favoriteGenre || '' } })
-
-  /*
-  const [getFavoriteBooks, result] = useLazyQuery(FAVORITE_BOOKS)
-
-  useEffect(() => {
-    if(props.favoriteGenre) {
-        console.log('genre:', props.favoriteGenre)
-        getFavoriteBooks({ variables: { genre: props.favoriteGenre } })
-    }
-  }, [props.favoriteGenre])
-  */
 
   useEffect(() => {
     if(result.data && result.data.allBooks) {
